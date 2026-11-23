@@ -1,7 +1,7 @@
 // node --test dist/legacy-domain-redirect/install/legacy-install-worker.test.js
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import worker, { pin } from "./legacy-install-worker.js";
+import worker, { pin, notice } from "./legacy-install-worker.js";
 
 const SCRIPT = '#!/bin/sh\nset -eu\nversion="${PGX_VERSION:-}"\n';
 const END = "2027-02-17T19:58:29Z";
@@ -21,7 +21,8 @@ test("serves the tagged script with the version default after the shebang", asyn
   const lines = (await r.text()).split("\n");
   assert.equal(lines[0], "#!/bin/sh");
   assert.match(lines[1], /^PGX_VERSION="\$\{PGX_VERSION:-0\.1\.3\}"/);
-  assert.equal(lines[2], "set -eu");
+  assert.match(lines[2], /^printf .*PGX is now PGBoxDB.* >&2 /);
+  assert.equal(lines[3], "set -eu", "the rest of the tagged script is unchanged");
   assert.deepEqual(calls, ["https://raw.githubusercontent.com/pgrundev/pgboxdb/v0.1.3/dist/install.sh"]);
 });
 
@@ -62,4 +63,19 @@ test("from the deadline on, or without one: 410 Gone, upstream never fetched", a
     assert.equal(await r.text(), "410 Gone\n");
   }
   assert.equal(calls.length, 0);
+});
+
+test("the served script tells the user PGX is now PGBoxDB, on stderr, before installing", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const body = pin('#!/bin/sh\necho "installing ${PGX_VERSION}"\n', "0.1.3");
+  const lines = body.split("\n");
+  assert.match(lines[1], /^PGX_VERSION=/, "the version default stays on line 2");
+  assert.match(lines[2], /^printf .* >&2 /, "the notice goes to stderr");
+  // Run it: stdout is only the installer's own output; stderr has the notice.
+  const s = spawnSync("sh", ["-c", body], { encoding: "utf8" });
+  assert.equal(s.stdout, "installing 0.1.3\n");
+  assert.equal(s.stderr, notice("0.1.3") + "\n");
+  assert.match(s.stderr, /PGX is now PGBoxDB/);
+  assert.match(s.stderr, /curl -fsSL https:\/\/pgboxdb\.com\/install \| sh/);
+  assert.match(s.stderr, /pgboxdb migrate/);
 });
