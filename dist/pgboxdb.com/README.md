@@ -16,6 +16,7 @@ so they win over it. The rest of the site is not in this repository.
 | Version | Deployed (UTC) | Change |
 |---|---|---|
 | `9d1e7dd0-88a9-413d-9260-f45f270b8c39` | 2026-11-23 18:43 | `/install`, `INSTALL_REF` v0.2.0 |
+| `5f39dbe1-88f4-453c-94df-fab05df23a6b` | 2026-11-23 | + `/llms.txt` (v0.2.0) |
 
 ## Hosting before this Worker (historical)
 - `pgboxdb.com` resolves through **Cloudflare** (`server: cloudflare`, `cf-ray`, `cf-cache-status`).
