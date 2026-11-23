@@ -87,7 +87,7 @@ check "Worker route is pgboxdb.com/install" has dist/pgboxdb.com/wrangler.toml '
 ALLOW="share/pgx/dist\\.json|share/pgx|'share', 'pgx'|/var/run/pgx|pgx_version|from before the rename|before the rename"
 hits="$(grep -rnE '(^|[^a-z0-9])(pgx|PGX|pgxdb)([^a-z0-9]|$)|pgx\.dev|pgrundev/pgx([^-]|$)' \
   dist/install.sh dist/assemble.sh dist/layout.md dist/npm/lib dist/npm/bin dist/npm/package.json dist/npm/README.md \
-  dist/docker Dockerfile dist/pgboxdb.com/install-worker.js dist/pgboxdb.com/wrangler.toml dist/release \
+  dist/docker Dockerfile dist/pgboxdb.com/install-worker.js dist/pgboxdb.com/index.js dist/pgboxdb.com/llms.txt dist/pgboxdb.com/wrangler.toml dist/release \
   .github/workflows 2>/dev/null | grep -vE "$ALLOW" || true)"
 [ -z "$hits" ] && ok "no previous-name identifier outside the legacy detection lines" || { bad "previous-name identifiers:"; echo "$hits" | sed 's/^/       /'; }
 

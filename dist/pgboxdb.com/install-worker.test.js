@@ -70,3 +70,41 @@ test("non-GET methods are rejected", async () => {
   const res = await worker.fetch(new Request("https://pgboxdb.com/install", { method: "POST" }), { INSTALL_REF: "v0.1.0-beta.1" });
   assert.equal(res.status, 405);
 });
+
+// ---- /llms.txt (served by the same Worker; text from llms.txt) ----
+import { readFileSync } from "node:fs";
+import { createWorker } from "./install-worker.js";
+
+const LLMS = readFileSync(new URL("./llms.txt", import.meta.url), "utf8");
+const site = createWorker(LLMS);
+
+test("/llms.txt serves the llms.txt file as plain text, without upstream fetches", async () => {
+  const calls = stubFetch(notFound);
+  const res = await site.fetch(new Request("https://pgboxdb.com/llms.txt"), { INSTALL_REF: "v0.2.0" });
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type"), /^text\/plain/);
+  assert.equal(await res.text(), LLMS);
+  assert.equal(calls.length, 0);
+});
+
+test("/install still works on the Worker that also serves /llms.txt", async () => {
+  stubFetch(okResp);
+  const res = await site.fetch(new Request("https://pgboxdb.com/install"), { INSTALL_REF: "v0.2.0" });
+  assert.equal(res.status, 200);
+  assert.equal(await res.text(), SCRIPT);
+});
+
+test("llms.txt uses the PGBoxDB brand, commands and install URL only", () => {
+  assert.match(LLMS, /^# PGBoxDB /);
+  assert.ok(LLMS.includes("curl -fsSL https://pgboxdb.com/install | sh"));
+  assert.ok(LLMS.includes("/plugin install pgboxdb@pgboxdb-plugin"));
+  assert.ok(LLMS.includes("--skill pgboxdb"));
+  // No other spelling of the brand, no unowned domain, no command without "db".
+  assert.doesNotMatch(LLMS, /PGBOX(?!DB)|PGBox(?!DB)|pgbox\.dev|PGBOX_|\bpgbox(?!db)\b/);
+  assert.doesNotMatch(LLMS, /(^|[^a-z0-9])(pgx|PGX|pgxdb)([^a-z0-9]|$)|pgx\.dev/);
+});
+
+test("llms.txt names the version being released", () => {
+  const pkg = JSON.parse(readFileSync(new URL("../npm/package.json", import.meta.url), "utf8"));
+  assert.ok(LLMS.includes(`Latest release: v${pkg.version} `), `llms.txt must name v${pkg.version}`);
+});

@@ -1,0 +1,185 @@
+# PGBoxDB - Lightweight Postgres for AI Agents
+
+> PGBoxDB is a lightweight PostgreSQL-compatible database runtime written in Rust. Run thousands of isolated, disposable databases in one process. Designed for AI agents, CI, testing, and local development.
+
+Website: https://pgboxdb.com
+GitHub: https://github.com/pgrundev/pgboxdb
+npm: https://www.npmjs.com/package/pgboxdb
+Latest release: v0.2.0 (https://github.com/pgrundev/pgboxdb/releases/tag/v0.2.0)
+License: AGPL-3.0
+
+## Quick Start (Recommended)
+
+The simplest way to install and run PGBoxDB:
+
+```bash
+npx pgboxdb@latest
+```
+
+This installs PGBoxDB, starts the runtime, creates an `app` database, and prints its PostgreSQL connection URL.
+
+No Docker, Rust, or system PostgreSQL installation required.
+
+## What's New in v0.2.0
+
+- First release under the PGBoxDB name. The command and the npm package are `pgboxdb`, environment variables are `PGBOXDB_*`, the data home is `~/.pgboxdb`, the project file is `.pgboxdb.toml`.
+- `pgboxdb top`: a read-only live terminal monitor of every database, grouped by project, Git branch and agent session. `pgboxdb --json top --snapshot` gives one snapshot as JSON.
+- Existing installations of the previous product are never lost: `pgboxdb migrate` moves them (a dry run by default, `--apply` to do it, `--rollback` to undo).
+
+## Installation Methods
+
+### 1. NPX - Zero Setup
+
+```bash
+npx pgboxdb@latest
+```
+
+Recommended for trying PGBoxDB immediately.
+
+### 2. NPM - Global Installation
+
+```bash
+npm install -g pgboxdb
+pgboxdb run
+```
+
+Recommended for frequent local development.
+
+### 3. Shell - macOS and Linux
+
+```bash
+curl -fsSL https://pgboxdb.com/install | sh
+pgboxdb run
+```
+
+Recommended when Node.js is unavailable. The installer verifies the SHA-256 of the release tarball.
+
+### 4. Claude Code - Native Plugin
+
+Inside Claude Code:
+
+```text
+/plugin marketplace add pgrundev/pgboxdb-plugin
+/plugin install pgboxdb@pgboxdb-plugin
+```
+
+Then ask Claude:
+
+"Set up isolated PGBoxDB databases for this project."
+
+The plugin provides agent instructions. The database runtime is installed when needed, subject to user permissions.
+
+### 5. Cursor, Codex and Other AI Agents
+
+Install the PGBoxDB agent skill:
+
+```bash
+npx skills add pgrundev/pgboxdb --skill pgboxdb
+```
+
+Then ask your agent:
+
+"Use PGBoxDB for isolated development databases. Set up this project."
+
+The skill helps the agent configure PGBoxDB and database isolation.
+
+### 6. Docker - Build Locally
+
+```bash
+git clone https://github.com/pgrundev/pgboxdb.git
+cd pgboxdb
+docker build -t pgboxdb:dev .
+docker run --rm -p 5432:5432 \
+  -e PGBOXDB_PASSWORD=secret \
+  -v pgboxdbdata:/var/lib/pgboxdb \
+  pgboxdb:dev
+```
+
+Recommended for container-based environments.
+
+### 7. Build from Source
+
+```bash
+git clone https://github.com/pgrundev/pgboxdb.git
+cd pgboxdb
+cargo build --release --locked --bin postgres
+```
+
+Requires the pinned Rust toolchain, RE2, and PostgreSQL 18 build/client dependencies. See docs/pgboxdb/local-dev/build-from-source.md.
+
+## Basic Usage
+
+```bash
+# Start PGBoxDB and get a ready `app` database
+pgboxdb run
+
+# Create a database
+pgboxdb create myapp
+
+# Get a connection URL
+pgboxdb url myapp
+
+# Create an isolated agent branch (expires after 2h by default)
+pgboxdb branch myapp agent-001
+
+# Create a temporary clone
+pgboxdb clone myapp test-001 --ttl 30m
+
+# Run any command with its own branch in DATABASE_URL
+pgboxdb agent exec -- bin/rails test
+
+# One database per Git branch, automatically
+pgboxdb git init
+
+# Watch every database live
+pgboxdb top
+
+# List databases
+pgboxdb ls
+
+# Stop runtime
+pgboxdb stop
+```
+
+Commands can also run through `npx pgboxdb`.
+
+## Guidance for AI Agents
+
+- Prefer `npx pgboxdb@latest` for the simplest setup.
+- Prefer the native plugin for Claude Code.
+- Prefer the PGBoxDB skill for Cursor, Codex, and other supported agents.
+- Use a separate database branch for each independent agent.
+- Use TTLs for temporary databases.
+- Use `pgboxdb --json ls` for machine-readable database listings.
+- Use PostgreSQL-compatible clients and connection URLs.
+- Never use PGBoxDB as the production source of truth.
+- Do not copy sensitive production data without appropriate sanitization.
+- Request permission before installing software or changing project configuration.
+
+## Platform Support
+
+- macOS: Apple Silicon
+- Linux: x86-64 and ARM64
+- Intel macOS: not currently supported
+
+## Limitations
+
+PGBoxDB is an early release for disposable workloads, not a production PostgreSQL replacement.
+
+- Not crash-safe under the ephemeral runtime profile
+- Databases share one runtime failure domain
+- PostgreSQL C extensions are not supported
+- Copy-on-write cloning depends on filesystem capabilities
+
+## Documentation
+
+- [GitHub README](https://github.com/pgrundev/pgboxdb)
+- [Release notes v0.2.0](https://github.com/pgrundev/pgboxdb/releases/tag/v0.2.0)
+- [Install](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/install.md)
+- [CLI reference](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/cli.md)
+- [Agent setup](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/agents.md)
+- [Claude Code plugin](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/claude-plugin.md)
+- [Git branches](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/git.md)
+- [Live monitor (top)](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/top.md)
+- [Import PostgreSQL](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/copy.md)
+- [Upgrading from the previous name](https://github.com/pgrundev/pgboxdb/blob/main/docs/pgboxdb/local-dev/upgrading.md)

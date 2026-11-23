@@ -1,10 +1,23 @@
-# pgboxdb.com `/install` endpoint (prepared, not deployed)
+# pgboxdb.com `/install` and `/llms.txt` endpoints
 
-`https://pgboxdb.com/install` must serve the reviewed [`dist/install.sh`](../install.sh)
-so that `curl -fsSL https://pgboxdb.com/install | sh` works. Today `pgboxdb.com` is a
-Cloudflare-hosted placeholder page and `/install` returns **HTTP 404**.
+The Cloudflare Worker `pgboxdb-install` (this directory) owns two routes on
+`pgboxdb.com`:
 
-## Current hosting (identified)
+* `/install` serves the reviewed [`dist/install.sh`](../install.sh) from the
+  pinned release tag `INSTALL_REF`, so `curl -fsSL https://pgboxdb.com/install | sh`
+  installs that release.
+* `/llms.txt` serves [`llms.txt`](llms.txt), the agent-facing summary of the
+  product. Update it with every release (a test checks it names the npm
+  package version) and redeploy.
+
+Both routes are more specific than whatever serves the rest of `pgboxdb.com`,
+so they win over it. The rest of the site is not in this repository.
+
+| Version | Deployed (UTC) | Change |
+|---|---|---|
+| `9d1e7dd0-88a9-413d-9260-f45f270b8c39` | 2026-11-23 18:43 | `/install`, `INSTALL_REF` v0.2.0 |
+
+## Hosting before this Worker (historical)
 - `pgboxdb.com` resolves through **Cloudflare** (`server: cloudflare`, `cf-ray`, `cf-cache-status`).
 - The root serves a **parked/placeholder page** (an `<x-dc>` document + `support.js`), not a managed site. There is **no** `/install` route.
 - The serving configuration lives in the **Cloudflare account**, not in this repository.
@@ -30,10 +43,12 @@ own the zone — so a successful deploy is itself proof of control.
 ## Deploy (maintainer, after approval — needs Cloudflare access)
 ```sh
 cd dist/pgboxdb.com
+node --test install-worker.test.js
 npx wrangler deploy --var INSTALL_REF:v0.2.0   # pin to the released tag (a PGBoxDB release, >= v0.2.0)
 curl -fsSL https://pgboxdb.com/install | head             # verify it serves the script
+curl -fsSL https://pgboxdb.com/llms.txt | head
 ```
-This adds a single route; it does **not** change DNS or other pgboxdb.com content.
+This owns only `/install` and `/llms.txt`; it does **not** change DNS or other pgboxdb.com content.
 
 ## Prerequisites before the public `curl | sh` works
 1. Publish the GitHub release (tag `v0.2.0`, the first PGBoxDB release) with the platform tarballs + `.sha256` (via `.github/workflows/release.yml`, draft → manual publish).
