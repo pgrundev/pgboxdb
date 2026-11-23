@@ -6,7 +6,9 @@
 // version variable (LEGACY_VERSION). Without it the script would install "the
 // newest release", which is a PGBoxDB release from v0.2.0 on, whose assets have
 // different names, so `curl … | sh` would fail. An explicit version set by the
-// user still wins. The installer itself is not changed in any other way.
+// user still wins. A second added line prints a notice (to stderr, so it never
+// mixes with output a caller parses) that PGX is now PGBoxDB and how to switch.
+// The installer itself is not changed in any other way.
 //
 // It serves only during the authorised transition: from REDIRECT_UNTIL on (or
 // if that is missing or invalid) every request gets 410 Gone, so the previous
@@ -15,12 +17,18 @@ const REPO = "pgrundev/pgboxdb";
 const REF_RE = /^v\d+\.\d+\.\d+[0-9A-Za-z.-]*$/;
 const VERSION_RE = /^\d+\.\d+\.\d+[0-9A-Za-z.-]*$/;
 const VERSION_VAR = "PGX_VERSION"; // the variable the tagged installer reads
+export const notice = (version) =>
+  `PGX is now PGBoxDB. This installs the last PGX release (${version}), which gets no updates.\n` +
+  "Switch: curl -fsSL https://pgboxdb.com/install | sh   then: pgboxdb migrate   (https://pgboxdb.com)";
 
 export function pin(script, version) {
   const nl = script.indexOf("\n");
   if (!script.startsWith("#!") || nl < 0) return null;
   const line = `${VERSION_VAR}="\${${VERSION_VAR}:-${version}}"  # pinned by the pgx.dev /install Worker\n`;
-  return script.slice(0, nl + 1) + line + script.slice(nl + 1);
+  // Single-quoted for the shell. The text has no single quote (the version is
+  // checked against VERSION_RE first), so nothing in it expands.
+  const say = `printf '%s\\n' '${notice(version).replace(/\n/g, "' '")}' >&2  # added by the pgx.dev /install Worker\n`;
+  return script.slice(0, nl + 1) + line + say + script.slice(nl + 1);
 }
 
 const text = (status, msg) =>

@@ -90,10 +90,12 @@ there.
 | Before | Now | Note |
 |---|---|---|
 | `pgx …` | `pgboxdb …` | same subcommands, flags, output and exit codes |
-| `npx pgxdb@latest` | `npx pgboxdb@latest` | new package; the old one is not changed by this release |
+| `npx pgxdb@latest` | `npx pgboxdb@latest` | new package; `pgxdb` is deprecated and gets no new versions |
+| `curl -fsSL https://pgx.dev/install \| sh` | `curl -fsSL https://pgboxdb.com/install \| sh` | the old URL installs the last previous release (0.1.3) with a notice, and stops working on 2027-02-17 |
 | `PGX_HOME`, `PGX_PORT`, `PGX_RUN_DIR`, `PGX_DURABILITY`, `PGX_LISTEN`, `PGX_PASSWORD`, `PGX_PG_BINDIR`, `PGX_SOURCE`, `PGX_TTL_INTERVAL`, `PGX_GIT`, `PGX_GIT_SKIP` | `PGBOXDB_…` | the old names are not read; `init`, `run`, `start`, `status`, `doctor` and `migrate` print a note when one is set |
 | variables exported into agent sessions and `git exec` (`PGX_AGENT_ID`, `PGX_BRANCH`, `PGX_GIT_BRANCH`, `PGX_ISOLATION`, …) | `PGBOXDB_…` | scripts that read them must be updated |
 | `pgx --json version` key `pgx_version`, `share/pgx/dist.json` | `pgboxdb_version`, `share/pgboxdb/dist.json` | |
 | new Git databases `pgx_<repo>_…` | `pgboxdb_<repo>_…` | existing databases keep their names and mappings |
 | Docker volume `/var/lib/pgx`, image user `pgx` | `/var/lib/pgboxdb`, user `pgboxdb` (same uid 10001) | mount an existing volume at `/var/lib/pgboxdb`; the data inside works unchanged |
-| Claude Code plugin `pgx` | plugin `pgboxdb` | install the new plugin; uninstall the old one |
+| Claude Code plugin `pgx@pgx-plugin` | `pgboxdb@pgboxdb-plugin` | the old marketplace now serves the new plugin; reinstall: `/plugin uninstall pgx@pgx-plugin`, `/plugin marketplace remove pgx-plugin`, `/plugin marketplace add pgrundev/pgboxdb-plugin`, `/plugin install pgboxdb@pgboxdb-plugin` |
+| Agent Skill `--skill pgx` | `npx skills add pgrundev/pgboxdb --skill pgboxdb` | remove the old skill directory (`.claude/skills/pgx`, `.agents/skills/pgx`) after installing the new one |
