@@ -16,41 +16,63 @@ const REPO = "pgrundev/pgboxdb";
 // hex commit sha (7–40). A branch name like "main" is intentionally rejected.
 const REF_RE = /^(v\d+\.\d+\.\d+[0-9A-Za-z.-]*|[0-9a-f]{7,40})$/;
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname !== "/install") {
-      return new Response("not found\n", { status: 404 });
-    }
-    if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response("method not allowed\n", { status: 405 });
-    }
-    const ref = env && env.INSTALL_REF;
-    if (!ref || !REF_RE.test(ref)) {
-      // Misconfiguration must fail loudly, never silently serve a mutable ref.
-      return new Response(
-        "pgboxdb installer misconfigured: INSTALL_REF must be a pinned release tag (e.g. v0.1.0-beta.1) or commit sha\n",
-        { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } }
-      );
-    }
-    const raw = `https://raw.githubusercontent.com/${REPO}/${ref}/dist/install.sh`;
-    const upstream = await fetch(raw, { cf: { cacheTtl: 300, cacheEverything: true } });
-    if (!upstream.ok) {
-      // Fail loudly: never serve an empty/200 body that would make `| sh` a no-op
-      // (e.g. an invalid ref whose raw URL 404s).
-      return new Response(`pgboxdb installer unavailable (upstream ${upstream.status} for ref ${ref})\n`, {
-        status: 502,
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      });
-    }
-    const body = await upstream.text();
-    return new Response(body, {
-      status: 200,
-      headers: {
-        "content-type": "text/x-shellscript; charset=utf-8",
-        "cache-control": "public, max-age=300",
-        "x-pgboxdb-install-ref": ref,
-      },
+// /llms.txt is the agent-facing summary of the product (llms.txt, the file
+// in this directory). index.js passes its text in; the Worker serves it on the
+// pgboxdb.com/llms.txt route, which is more specific than whatever serves the
+// rest of the site, so the summary always matches the current release.
+export function createWorker(llmsTxt) {
+  return {
+    async fetch(request, env) {
+      const url = new URL(request.url);
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        return new Response("method not allowed\n", { status: 405 });
+      }
+      if (url.pathname === "/llms.txt" && llmsTxt) {
+        return new Response(request.method === "HEAD" ? null : llmsTxt, {
+          status: 200,
+          headers: {
+            "content-type": "text/plain; charset=utf-8",
+            "cache-control": "public, max-age=300",
+          },
+        });
+      }
+      if (url.pathname !== "/install") {
+        return new Response("not found\n", { status: 404 });
+      }
+      return install(env);
+    },
+  };
+}
+
+// Without llms.txt text (the unit tests of /install): /install only.
+export default createWorker(null);
+
+async function install(env) {
+  const ref = env && env.INSTALL_REF;
+  if (!ref || !REF_RE.test(ref)) {
+    // Misconfiguration must fail loudly, never silently serve a mutable ref.
+    return new Response(
+      "pgboxdb installer misconfigured: INSTALL_REF must be a pinned release tag (e.g. v0.1.0-beta.1) or commit sha\n",
+      { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } }
+    );
+  }
+  const raw = `https://raw.githubusercontent.com/${REPO}/${ref}/dist/install.sh`;
+  const upstream = await fetch(raw, { cf: { cacheTtl: 300, cacheEverything: true } });
+  if (!upstream.ok) {
+    // Fail loudly: never serve an empty/200 body that would make `| sh` a no-op
+    // (e.g. an invalid ref whose raw URL 404s).
+    return new Response(`pgboxdb installer unavailable (upstream ${upstream.status} for ref ${ref})\n`, {
+      status: 502,
+      headers: { "content-type": "text/plain; charset=utf-8" },
     });
-  },
-};
+  }
+  const body = await upstream.text();
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/x-shellscript; charset=utf-8",
+      "cache-control": "public, max-age=300",
+      "x-pgboxdb-install-ref": ref,
+    },
+  });
+}

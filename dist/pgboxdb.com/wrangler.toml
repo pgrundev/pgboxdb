@@ -1,16 +1,17 @@
-# Cloudflare Worker that serves https://pgboxdb.com/install (see install-worker.js).
-# PREPARED, NOT DEPLOYED — deploying requires Cloudflare account access and
-# maintainer approval. It does not touch DNS or any other pgboxdb.com route.
+# Cloudflare Worker that serves https://pgboxdb.com/install (see install-worker.js)
+# and https://pgboxdb.com/llms.txt (the file llms.txt). Deployed by a maintainer
+# (README.md). It does not touch DNS or any other pgboxdb.com route.
 name = "pgboxdb-install"
-main = "install-worker.js"
+main = "index.js"
 compatibility_date = "2026-10-01"
 
-# The route this Worker owns. Deploying this route REQUIRES that the configured
+# The routes this Worker owns. Deploying them REQUIRES that the configured
 # Cloudflare account controls the pgboxdb.com zone — `wrangler deploy` fails if the
 # account does not own `zone_name`, which is the enforcement point for
 # "verify the account controls the zone" (see README).
 routes = [
   { pattern = "pgboxdb.com/install", zone_name = "pgboxdb.com" },
+  { pattern = "pgboxdb.com/llms.txt", zone_name = "pgboxdb.com" },
 ]
 
 # Pinned release ref the installer is served from. There is no fallback in the
