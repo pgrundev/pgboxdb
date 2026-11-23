@@ -71,6 +71,7 @@ approval. That is not a domain transfer or deletion.
 | `pgx-install` | `d1cc0c44-9283-4fd3-9fce-07c9ef118396` | 2026-11-19 20:04:41 | v0.1.3 script, version pinned |
 | `pgx-install` | `f7c5157b-6261-4250-9501-a59715f43c0e` | 2026-11-19 20:23 | + 410 after the deadline |
 | `pgx-dev-redirect` | `5d1fab37-4514-412c-98e7-0daa5c826709` | 2026-11-19 20:23:25 | + 410 after the deadline, `INSTALLER` binding |
+| `pgx-install` | `d3e22ce3-cc1e-4655-b3e2-f4933cbcf489` | 2026-11-23 | + notice on stderr: PGX is now PGBoxDB, how to switch |
 
 Before the transition, `pgx-install` was `44d28964-e04c-4899-927a-105f9e6202ed`
 (tag v0.1.0's script, unpinned).
